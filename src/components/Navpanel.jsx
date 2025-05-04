@@ -320,30 +320,30 @@ const NavPanel = ({ workspaceId, openFile }) => {
 
   return (
     <div className="bg-gray-900 text-gray-300 h-full w-full flex flex-col border-r border-gray-700">
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-sm font-semibold mb-8 text-right">FILE EXPLORER</h2>
-        <div className="flex space-x-2 justify-start ">
+      <div className="pt-2 px-3">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-white">File Explorer</h2>
           {(userRole === "contributor" || userRole === "owner") && (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setCreatingParentFolderId(null);
-                  setNewItemName("");
-                  setCreatingType((prev) => (prev === "folder" ? null : "folder"));
-                }}
-                className="hover:bg-blue-700 bg-blue-500 bg-opacity-10 ring-1 ring-blue-500  px-2 py-1 rounded-md text-xs flex gap-1"
-              > Add folder
-                <Folder size={16} className="text-gray-400 " />
-              </button>
+            <div className="flex gap-1">
               <button
                 onClick={() => {
                   setCreatingParentFolderId(null);
                   setNewItemName("");
                   setCreatingType((prev) => (prev === "file" ? null : "file"));
                 }}
-                className=" hover:bg-orange-700 bg-orange-500 bg-opacity-10 ring-1 ring-orange-400  px-2 py-1 rounded-md flex items-center text-xs gap-1"
-              >  Add file
-                <File size={16} className="text-orange-400" />
+                className="p-1 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 rounded-lg transition-all"
+              >
+                <PlusCircle size={16} className="text-white" />
+              </button>
+              <button
+                onClick={() => {
+                  setCreatingParentFolderId(null);
+                  setNewItemName("");
+                  setCreatingType((prev) => (prev === "folder" ? null : "folder"));
+                }}
+                className="p-1 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 rounded-lg transition-all"
+              >
+                <Folder size={16} className="text-white" />
               </button>
             </div>
           )}
@@ -351,14 +351,14 @@ const NavPanel = ({ workspaceId, openFile }) => {
       </div>
 
       <div
-        className="flex-1 overflow-y-auto py-2 px-1"
+        className="flex-1 overflow-y-auto py-1 px-1"
         onDragOver={(e) => handleDragOver(e, null)}
         onDrop={(e) => handleDrop(e, null)}
       >
         {creatingType && !creatingParentFolderId && (
-          <div className="flex items-center px-2 py-1">
+          <div className="flex items-center px-2 py-0.5">
             <input
-              className="text-sm bg-gray-800 py-1 text-white px-3 rounded flex-1"
+              className="text-sm bg-gray-800 py-1 text-white px-2 rounded flex-1"
               placeholder={`New ${creatingType} name`}
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}

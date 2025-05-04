@@ -9,9 +9,11 @@ import InviteNotification from "./InviteNotification";
 import { auth } from "@/config/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/config/firebase"; // Firestore instance
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Play } from "lucide-react";
+import SearchBar from "@/components/Searchbar";
+import ShowMembers from "@/components/Members";
 
-const Header = ({ workspaceId }) => {
+const Header = ({ workspaceId, workspaceName }) => {
   const pathname = usePathname();
   const router = useRouter();
   const [isPublic, setIsPublic] = useState(true); // Default to public
@@ -56,30 +58,44 @@ const Header = ({ workspaceId }) => {
   };
 
   return (
-    <header className="flex items-center justify-between px-8 py-3 bg-[#0a0f1e] bg-opacity-80 backdrop-blur-lg border-b border-gray-700 shadow-xl z-20">
-      {/* Title with Neon Glow Effect */}
-      <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-lg animate-pulse">
-      XEN Ai 
-      </h1>
-
-      <InviteNotification />
+    <header className="flex items-center justify-between px-8 py-3 bg-[#0a0f1e] bg-opacity-80 backdrop-blur-lg border-b border-gray-700 shadow-xl z-50">
+      <div className="flex items-center gap-6">
+        {pathname.startsWith("/workspace/") && (
+          <div className="flex items-center gap-4">
+            <span className="text-2xl font-semibold">
+              <span className="text-gray-400">Workspace /</span>
+              <span className="text-indigo-400 font-mono ml-2">{workspaceName}</span>
+            </span>
+          </div>
+        )}
+      </div>
 
       <div className="flex items-center gap-6">
-
         {pathname.startsWith("/workspace/") && (
-          <Button
-            onClick={goToDashboard}
-            className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-500 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-110 hover:shadow-blue-500/50"
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </Button>
+          <>
+            <Button
+              onClick={goToDashboard}
+              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-indigo-600 hover:to-blue-500 text-white font-semibold rounded-lg shadow-lg transition-all duration-300 transform hover:scale-110 hover:shadow-blue-500/50"
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              Dashboard
+            </Button>
+            <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-indigo-600/20">
+              <Play size={16} />
+              Run Code
+            </button>
+          </>
         )}
 
-        {/* Welcome Message */}
-        <p className="text-white text-sm font-medium opacity-90 animate-fadeIn">
-          Welcome back, <span className="font-bold text-blue-400">{userName}</span> 👋
-        </p>
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <SearchBar workspaceId={workspaceId} />
+          </div>
+          <div className="border-l border-gray-700 h-8" />
+          <ShowMembers workspaceId={workspaceId} />
+        </div>
+
+        <InviteNotification />
 
         {/* Profile Avatar */}
         <Link href="/profile">
