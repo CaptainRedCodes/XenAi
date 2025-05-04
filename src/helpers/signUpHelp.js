@@ -1,12 +1,12 @@
 import { auth, db } from "@/config/firebase";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp, deleteDoc } from "firebase/firestore";
-//import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
+import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
 
+// Function to sign up user
 export const signUpUser = async (email, password, displayName) => {
   try {
-    // Check if user document exists in Firestore
+    // Check if user already exists in Firestore
     const userRef = doc(db, "users", email);
     const userSnap = await getDoc(userRef);
 
@@ -14,74 +14,15 @@ export const signUpUser = async (email, password, displayName) => {
       return { success: false, message: "User already exists. Please log in." };
     }
 
-    // // Generate verification code
-     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // // Store verification code in Firestore (expires after 10 minutes)
-     await setDoc(doc(db, "emailVerifications", email), {
-       verifyCode,
-       createdAt: serverTimestamp(),
-     });
-
-    //   // Send verification email
-    //   const emailResponse = await sendVerificationEmail(
-    //     email,
-    //     verifyCode
-    //   );
-
-    // if(!emailResponse.success){
-      // console.error('Error sending verification email:', emailResponse.message);
-      // return Response.json(
-      //   {
-      //     success: false,
-      //     message: emailResponse.message,
-      //   },
-      //   { status: 500 }
-      // );
-     //}
-
-     return { 
-      success: true, 
-       message: "Verification email sent. Please check your inbox." 
-     };
-  } catch (error) {
-    console.error("Sign-up error:", error);
-    return { success: false, message: error.message };
-  }
-};
-
-export const verifyEmailCode = async (email, code, password, displayName) => {
-  try {
-    // // Get verification document
-     const verificationRef = doc(db, "emailVerifications", email);
-     const verificationSnap = await getDoc(verificationRef);
-
-     if (!verificationSnap.exists()) {
-       return { success: false, message: "No verification code found." };
-     }
-
-     const { verifyCode, createdAt } = verificationSnap.data();
-
-    // // Check code expiration (10 minutes)
-     const expirationTime = 100 * 60 * 1000; // 10 minutes in milliseconds
-     const now = new Date();
-     const codeAge = now - createdAt.toDate();
-
-     if (code !== verifyCode) {
-     return { success: false, message: "Incorrect verification code." };
-     }
-
-     if (codeAge > expirationTime) {
-       await deleteDoc(verificationRef);
-       return { success: false, message: "Code has expired. Please request a new one." };
-     }
-
     // Create Firebase user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Update user profile
+    // Update user profile with display name
     await updateProfile(user, { displayName });
+
+    // Send email verification to the user
+    await sendEmailVerification(user);
 
     // Create user document in Firestore
     await setDoc(doc(db, "users", email), {
@@ -102,16 +43,14 @@ export const verifyEmailCode = async (email, code, password, displayName) => {
       snippets: [],
     });
 
-    // Clean up verification code
-    await deleteDoc(verificationRef);
-
-    return { success: true, user };
+    return { success: true, user, message: "Verification email sent. Please check your inbox." };
   } catch (error) {
-    console.error("Verification error:", error);
+    console.error("Sign-up error:", error);
     return { success: false, message: error.message };
   }
 };
 
+// Sign in with Google
 export const signInWithGoogle = async () => {
   try {
     const provider = new GoogleAuthProvider();
@@ -122,6 +61,7 @@ export const signInWithGoogle = async () => {
     const docSnap = await getDoc(userRef);
 
     if (!docSnap.exists()) {
+      // Create user document in Firestore if not already exists
       await setDoc(userRef, {
         email: user.email,
         displayName: user.displayName,
@@ -144,5 +84,17 @@ export const signInWithGoogle = async () => {
     return { success: true, user };
   } catch (error) {
     return { success: false, error: error.message };
+  }
+};
+
+const checkIfEmailVerified = () => {
+  const user = auth.currentUser;
+
+  if (user && user.emailVerified) {
+    console.log("Email is verified!");
+    // Proceed with further logic (e.g., allow access to protected areas of the app)
+  } else {
+    console.log("Email not verified.");
+    // Show a message to the user that they need to verify their email.
   }
 };

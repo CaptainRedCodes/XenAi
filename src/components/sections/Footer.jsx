@@ -13,7 +13,7 @@ export default function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
             <div className="col-span-1 md:col-span-2">
               <Link href="/" className="flex items-center space-x-2 mb-4">
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">XenAI</span>
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Xen.ai</span>
               </Link>
               <p className="text-white/70 max-w-md">
                 Next-generation code editor with AI-powered suggestions to enhance your coding experience.
@@ -67,7 +67,7 @@ export default function Footer() {
         <SlideIn direction="up" delay={0.2}>
           <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-white/50 text-sm">
-              &copy; {currentYear} XenAI. All rights reserved.
+              &copy; {currentYear} Xen.ai. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-white/50 hover:text-white transition-colors">

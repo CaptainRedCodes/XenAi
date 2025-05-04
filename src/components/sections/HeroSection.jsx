@@ -64,11 +64,6 @@ export default function HeroSection() {
                 <div className="w-3 h-3 rounded-full bg-yellow-500" />
                 <div className="w-3 h-3 rounded-full bg-green-500" />
               </div>
-              <div className="flex space-x-4">
-                <div className="text-xs text-gray-400 px-3 py-1 rounded bg-zinc-800">mod.rs</div>
-                <div className="text-xs text-gray-400 px-3 py-1 rounded bg-zinc-800">CHAT</div>
-                <div className="text-xs text-gray-400 px-3 py-1 rounded bg-zinc-800">COMPOSER</div>
-              </div>
               <div className="flex space-x-2">
                 <div className="w-4 h-4 text-gray-400">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -132,27 +127,7 @@ export default function HeroSection() {
       </div>
       
       {/* Trusted by section */}
-      <div className="container mx-auto px-4 md:px-6 mt-16 relative z-10">
-        <SlideIn delay={0.5} direction="up" className="text-center">
-          <p className="text-sm text-white/60 mb-6">Trusted by engineers at</p>
 
-          <StaggerContainer className="grid grid-cols-2 sm:grid-cols-5 gap-8 items-center justify-items-center max-w-3xl mx-auto">
-            {[
-              { name: "OpenAI" },
-              { name: "Perplexity" },
-              { name: "Samsung" },
-              { name: "Apple" },
-              { name: "Ramp" }
-            ].map((logo, index) => (
-              <StaggerItem key={logo.name} delay={0.1 * index}>
-                <div className="h-7 w-auto opacity-70 hover:opacity-100 transition-opacity font-bold text-white/70">
-                  {logo.name}
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </SlideIn>
-      </div>
     </section>
   );
 }

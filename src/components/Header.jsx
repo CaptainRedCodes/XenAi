@@ -63,8 +63,7 @@ const Header = ({ workspaceId, workspaceName }) => {
         {pathname.startsWith("/workspace/") && (
           <div className="flex items-center gap-4">
             <span className="text-2xl font-semibold">
-              <span className="text-gray-400">Workspace /</span>
-              <span className="text-indigo-400 font-mono ml-2">{workspaceName}</span>
+              <span className="text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Xen.ai</span>
             </span>
           </div>
         )}
@@ -80,22 +79,8 @@ const Header = ({ workspaceId, workspaceName }) => {
               <LayoutDashboard className="w-5 h-5" />
               Dashboard
             </Button>
-            <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-indigo-600/20">
-              <Play size={16} />
-              Run Code
-            </button>
           </>
         )}
-
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <SearchBar workspaceId={workspaceId} />
-          </div>
-          <div className="border-l border-gray-700 h-8" />
-          <ShowMembers workspaceId={workspaceId} />
-        </div>
-
-        <InviteNotification />
 
         {/* Profile Avatar */}
         <Link href="/profile">

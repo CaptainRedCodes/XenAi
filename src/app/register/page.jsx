@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signUpUser, signInWithGoogle, verifyEmailCode } from "@/helpers/signUpHelp";
+import { signUpUser, signInWithGoogle } from "@/helpers/signUpHelp";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Header from "@/components/sections/Header";
 
 const toastOptions = {
   position: "top-right",
@@ -46,7 +47,7 @@ export default function SignUpPage() {
         toast.error(res.message, toastOptions);
       } else {
         toast.success(res.message, toastOptions);
-        setShowVerification(true);
+        setShowVerification(true);  // Show the verification dialog
       }
     } catch (error) {
       toast.error("Sign-up failed: " + error.message, toastOptions);
@@ -59,18 +60,19 @@ export default function SignUpPage() {
 
     setLoading(true);
     try {
+      // Assuming `verifyEmailCode` is a Firebase helper function for email verification.
       const res = await verifyEmailCode(email, verificationCode, password, displayName);
       if (res.success) {
         toast.success("Account created successfully! Redirecting...", toastOptions);
-        setVerificationCode("")
+        setVerificationCode(""); // Reset the verification code field
         router.push("/dashboard");
       } else {
         toast.error(res.message, toastOptions);
-        setVerificationCode("")
+        setVerificationCode(""); // Reset the verification code field
       }
     } catch (error) {
       toast.error("Verification failed: " + error.message, toastOptions);
-      setVerificationCode("")
+      setVerificationCode(""); // Reset the verification code field
     }
     setLoading(false);
   };
@@ -90,9 +92,10 @@ export default function SignUpPage() {
     setLoading(false);
   };
 
- return (
+  return (
     <div className="flex h-screen bg-[#0f0f17] text-white">
       <ToastContainer theme="dark" />
+      <Header/>
       
       {/* Left side with welcome message */}
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-[#1a1a2e] to-[#4a0072] p-8 flex-col justify-center items-center">
@@ -101,7 +104,7 @@ export default function SignUpPage() {
           <p className="text-lg text-gray-300 mb-8">Create an account to start your journey with us and unlock all features.</p>
           <div className="animate-pulse">
             <button className="border border-white/30 bg-black/20 hover:bg-black/30 text-white rounded-md px-6 py-2 transition-all duration-300">
-              Skip the lag ?
+              Skip the lag?
             </button>
           </div>
         </div>
@@ -165,16 +168,6 @@ export default function SignUpPage() {
                   <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.086-9.5H17v-1h-6.086v-1.5H17v-1h-6.086V7.5H17v-1h-6.086c-.827 0-1.5.673-1.5 1.5v5c0 .827.673 1.5 1.5 1.5z"/>
                 </svg>
               </button>
-              <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#1877F2">
-                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.879V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.989C18.343 21.129 22 16.99 22 12c0-5.523-4.477-10-10-10z"/>
-                </svg>
-              </button>
-              <button className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all duration-300">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"/>
-                </svg>
-              </button>
             </div>
             
             <p className="text-center text-sm text-gray-400">
@@ -183,9 +176,11 @@ export default function SignUpPage() {
                 Login here
               </Link>
             </p>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Email verification dialog */}
       <Dialog open={showVerification} onOpenChange={setShowVerification}>
         <DialogContent className="bg-[#1a1a2e] border border-gray-700 p-6 rounded-lg shadow-xl text-white">
           <DialogHeader>
@@ -219,6 +214,5 @@ export default function SignUpPage() {
         </DialogContent>
       </Dialog>
     </div>
-  </div>
   );
 }

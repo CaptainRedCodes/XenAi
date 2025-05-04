@@ -36,7 +36,7 @@ const Output = ({ editorRef, language }) => {
   };
 
   return (
-    <div className="ml-3 w-[30%] bg-black ring-1 ring-gray-700 rounded-lg shadow-lg flex flex-col h-full">
+    <div className="ml-8 w-[30%] bg-black ring-1 ring-gray-700 rounded-lg shadow-lg flex flex-col h-full">
       <textarea
         className="w-full p-2 mb-2 text-sm bg-gray-800 text-white border border-gray-600 rounded-md resize-none"
         rows={4}

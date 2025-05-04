@@ -17,7 +17,17 @@ import {
   Trash,
   ChevronDown,
   ChevronRight,
+  Code,
+  Image,
+  FileText,
+  FileCog,
+  FileJson,
+  FileSpreadsheet,
+  FileVideo,
+  FileAudio,
+  FileArchive,
 } from "lucide-react";
+import { BOILERPLATES } from "@/constants";
 import { useRouter } from "next/navigation";
 
 const NavPanel = ({ workspaceId, openFile }) => {
@@ -34,6 +44,76 @@ const NavPanel = ({ workspaceId, openFile }) => {
 
   const truncateName = (name) => {
     return name.length > 20 ? `${name.substring(0, 20)}...` : name;
+  };
+
+  // Get file extension from name
+  const getFileExtension = (fileName) => {
+    const parts = fileName.split('.');
+    return parts.length > 1 ? parts.pop().toLowerCase() : '';
+  };
+
+  // Get file icon based on extension
+  const getFileIcon = (fileName) => {
+    const ext = getFileExtension(fileName);
+    
+    // Programming languages
+    const codeExts = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rb', 'php', 'html', 'css', 'scss'];
+    // Config files
+    const configExts = ['json', 'xml', 'yaml', 'yml', 'toml', 'ini', 'env', 'gitignore', 'dockerignore'];
+    // Document files
+    const docExts = ['md', 'txt', 'doc', 'docx', 'pdf', 'rtf'];
+    // Spreadsheet files
+    const spreadExts = ['csv', 'xls', 'xlsx', 'ods'];
+    // Media files
+    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'ico'];
+    const videoExts = ['mp4', 'webm', 'mov', 'avi', 'mkv'];
+    const audioExts = ['mp3', 'wav', 'ogg', 'flac'];
+    // Archive files
+    const archiveExts = ['zip', 'rar', 'tar', 'gz', '7z'];
+
+    if (codeExts.includes(ext)) {
+      return <Code size={16} className="mr-2 text-green-400" />;
+    } else if (configExts.includes(ext)) {
+      return <FileCog size={16} className="mr-2 text-purple-400" />;
+    } else if (ext === 'json') {
+      return <FileJson size={16} className="mr-2 text-yellow-400" />;
+    } else if (docExts.includes(ext)) {
+      return <FileText size={16} className="mr-2 text-blue-400" />;
+    } else if (spreadExts.includes(ext)) {
+      return <FileSpreadsheet size={16} className="mr-2 text-green-500" />;
+    } else if (imageExts.includes(ext)) {
+      return <Image size={16} className="mr-2 text-pink-400" />;
+    } else if (videoExts.includes(ext)) {
+      return <FileVideo size={16} className="mr-2 text-red-400" />;
+    } else if (audioExts.includes(ext)) {
+      return <FileAudio size={16} className="mr-2 text-indigo-400" />;
+    } else if (archiveExts.includes(ext)) {
+      return <FileArchive size={16} className="mr-2 text-amber-400" />;
+    } else {
+      return <File size={16} className="mr-2 text-orange-400" />;
+    }
+  };
+
+  // Get color for file based on extension
+  const getFileColor = (fileName) => {
+    const ext = getFileExtension(fileName);
+    
+    // Color mapping based on file type
+    const colorMap = {
+      'js': 'text-yellow-300',
+      'jsx': 'text-blue-300',
+      'ts': 'text-blue-400',
+      'tsx': 'text-cyan-300',
+      'py': 'text-green-300',
+      'html': 'text-orange-300',
+      'css': 'text-blue-300',
+      'scss': 'text-pink-300',
+      'json': 'text-yellow-300',
+      'md': 'text-gray-300',
+      'txt': 'text-white',
+    };
+
+    return colorMap[ext] || 'text-gray-300';
   };
 
   useEffect(() => {
@@ -75,7 +155,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
       unsubscribeFolders();
       unsubscribeFiles();
     };
-  }, [workspaceId]);
+  }, [workspaceId, router]);
 
   const toggleFolder = (folderId) => {
     setFolderStates((prev) => ({
@@ -124,20 +204,80 @@ const NavPanel = ({ workspaceId, openFile }) => {
           parentFolderId: creatingParentFolderId,
         });
       } else {
+        // Add default extension if none provided
+        let fileName = newItemName;
+        if (!fileName.includes('.')) {
+          fileName = `${fileName}.txt`;
+        }
+        
         await addDoc(collection(db, `workspaces/${workspaceId}/files`), {
-          name: newItemName,
+          name: fileName,
           folderId: creatingParentFolderId,
           workspaceId,
+          fileType: getFileExtension(fileName),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          content: generateBoilerplate(fileName)
         });
       }
       setNewItemName("");
       setCreatingType(null);
       setCreatingParentFolderId(null);
-      setFolderStates({ ...folderStates, [folderid]: true });
+      if (folderid) setFolderStates({ ...folderStates, [folderid]: true });
 
     } catch (error) {
       console.error("Error creating item:", error);
     }
+  };
+
+  // Use the imported boilerplate templates
+
+  // Generate boilerplate code based on file extension
+  const generateBoilerplate = (fileName) => {
+    const ext = getFileExtension(fileName);
+    
+    // Map file extensions to boilerplate keys
+    const extensionToKey = {
+      'js': 'javascript',
+      'jsx': 'javascript',
+      'ts': 'typescript',
+      'tsx': 'typescript',
+      'py': 'python',
+      'java': 'java',
+      'cs': 'csharp',
+      'cpp': 'cpp',
+      'go': 'go',
+      'html': 'html',
+      'md': 'markdown',
+      'txt': 'text'
+    };
+    
+    // Get the appropriate key for the boilerplate
+    const boilerplateKey = extensionToKey[ext] || ext;
+    
+    // Custom boilerplates for some file types not in the imported BOILERPLATES
+    const customBoilerplates = {
+      'css': `/* 
+ * Main Stylesheet
+ * Created: ${new Date().toLocaleDateString()}
+ */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+`,
+      'json': `{
+  "name": "${fileName.replace('.json', '')}",
+  "version": "1.0.0",
+  "description": ""
+}
+`
+    };
+    
+    // Return the boilerplate from the imported BOILERPLATES if available, otherwise from custom ones
+    return BOILERPLATES[boilerplateKey] || customBoilerplates[ext] || '';
   };
 
   const renameItem = async () => {
@@ -147,7 +287,13 @@ const NavPanel = ({ workspaceId, openFile }) => {
       const collectionName = renamingItem.type === "folder" ? "folders" : "files";
       await updateDoc(
         doc(db, `workspaces/${workspaceId}/${collectionName}/${renamingItem.id}`),
-        { name: renamingItem.name }
+        { 
+          name: renamingItem.name,
+          ...(renamingItem.type === "file" && {
+            fileType: getFileExtension(renamingItem.name),
+            updatedAt: new Date().toISOString()
+          })
+        }
       );
       setRenamingItem(null);
     } catch (error) {
@@ -180,7 +326,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
     return (
       <div
         key={folder.id}
-        className=" ml-3 border-l border-gray-700"
+        className="ml-3 border-l border-gray-700"
         draggable
         onDragStart={(e) => handleDragStart(e, folder, "folder")}
         onDragOver={(e) => handleDragOver(e, folder.id)}
@@ -257,8 +403,8 @@ const NavPanel = ({ workspaceId, openFile }) => {
             {creatingType && creatingParentFolderId === folder.id && (
               <div className="ml-4 flex items-center px-2 py-1">
                 <input
-                  className="text-sm bg-gray-800 text-white px-2  py-1 rounded flex-1"
-                  placeholder={`New ${creatingType} name`}
+                  className="text-sm bg-gray-800 text-white px-2 py-1 rounded flex-1"
+                  placeholder={`New ${creatingType} name${creatingType === "file" ? " (with extension)" : ""}`}
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
                   onBlur={createItem}
@@ -281,7 +427,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
                   className="flex items-center cursor-pointer flex-1"
                   onClick={() => openFile(file)}
                 >
-                  <File size={16} className="mr-2 text-orange-400" />
+                  {getFileIcon(file.name)}
                   {renamingItem?.id === file.id ? (
                     <input
                       className="text-sm bg-gray-700 text-white px-1 rounded"
@@ -293,7 +439,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
                     />
                   ) : (
                     <span
-                      className="text-sm"
+                      className={`text-sm ${getFileColor(file.name)}`}
                       onDoubleClick={() => setRenamingItem({ id: file.id, name: file.name, type: "file" })}
                     >
                       {truncateName(file.name)}
@@ -320,7 +466,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
 
   return (
     <div className="bg-gray-900 text-gray-300 h-full w-full flex flex-col border-r border-gray-700">
-      <div className="pt-2 px-3">
+      <div className="pt-10 px-5">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold text-white">File Explorer</h2>
           {(userRole === "contributor" || userRole === "owner") && (
@@ -332,6 +478,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
                   setCreatingType((prev) => (prev === "file" ? null : "file"));
                 }}
                 className="p-1 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 rounded-lg transition-all"
+                title="Create new file"
               >
                 <PlusCircle size={16} className="text-white" />
               </button>
@@ -342,6 +489,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
                   setCreatingType((prev) => (prev === "folder" ? null : "folder"));
                 }}
                 className="p-1 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 rounded-lg transition-all"
+                title="Create new folder"
               >
                 <Folder size={16} className="text-white" />
               </button>
@@ -359,7 +507,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
           <div className="flex items-center px-2 py-0.5">
             <input
               className="text-sm bg-gray-800 py-1 text-white px-2 rounded flex-1"
-              placeholder={`New ${creatingType} name`}
+              placeholder={`New ${creatingType} name${creatingType === "file" ? " (with extension)" : ""}`}
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               onBlur={createItem}
@@ -388,7 +536,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
                 className="flex items-center cursor-pointer flex-1 border-l border-gray-700 ml-1 px-2 py-1"
                 onClick={() => openFile(file)}
               >
-                <File size={16} className="mr-2 text-orange-400" />
+                {getFileIcon(file.name)}
                 {renamingItem?.id === file.id ? (
                   <input
                     className="text-sm bg-gray-700 text-white px-1 rounded"
@@ -400,7 +548,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
                   />
                 ) : (
                   <span
-                    className="text-sm"
+                    className={`text-sm ${getFileColor(file.name)}`}
                     onDoubleClick={() => setRenamingItem({ id: file.id, name: file.name, type: "file" })}
                   >
                     {truncateName(file.name)}
