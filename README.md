@@ -1,6 +1,6 @@
-# XenAI - AI-Powered Collaborative Code Editor
+# Xen.ai - AI-Powered Collaborative Code Editor
 
-XenAI is a modern, collaborative code editor platform that combines the power of artificial intelligence with real-time collaboration features. Built with Next.js and Firebase, it provides developers with an intuitive workspace for coding, pair programming, and project management.
+Xen.ai is a modern, collaborative code editor platform that combines the power of artificial intelligence with real-time collaboration features. Built with Next.js and Firebase, it provides developers with an intuitive workspace for coding, pair programming, and project management.
 
 ## Features
 
