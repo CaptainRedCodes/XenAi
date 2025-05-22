@@ -26,6 +26,7 @@ import {
   FileVideo,
   FileAudio,
   FileArchive,
+  Search,
 } from "lucide-react";
 import { BOILERPLATES } from "@/constants";
 import { useRouter } from "next/navigation";
@@ -40,6 +41,11 @@ const NavPanel = ({ workspaceId, openFile }) => {
   const [creatingParentFolderId, setCreatingParentFolderId] = useState(null);
   const [newItemName, setNewItemName] = useState("");
   const [renamingItem, setRenamingItem] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [filteredFiles, setFilteredFiles] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
 
   const truncateName = (name) => {
@@ -115,6 +121,46 @@ const NavPanel = ({ workspaceId, openFile }) => {
 
     return colorMap[ext] || 'text-gray-300';
   };
+
+  // Handle search functionality
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredFiles([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const query = searchQuery.toLowerCase();
+    
+    // Filter files based on search query
+    const matchedFiles = files.filter(file => 
+      file.name.toLowerCase().includes(query)
+    );
+    
+    setFilteredFiles(matchedFiles);
+  }, [searchQuery, files]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Search shortcut (Ctrl/Cmd + F)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+      // New file shortcut (Ctrl/Cmd + N)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n' && (userRole === 'contributor' || userRole === 'owner')) {
+        e.preventDefault();
+        setCreatingParentFolderId(null);
+        setNewItemName("");
+        setCreatingType('file');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [userRole]);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -464,38 +510,189 @@ body {
     );
   };
 
+  // Function to handle double click on File Explorer header to minimize
+  const handleHeaderDoubleClick = () => {
+    const event = new CustomEvent('toggleNavPanel', { detail: { minimize: true } });
+    window.dispatchEvent(event);
+  };
+
+  // Handle search functionality
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredFiles([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const query = searchQuery.toLowerCase();
+    
+    // Filter files based on search query
+    const matchedFiles = files.filter(file => 
+      file.name.toLowerCase().includes(query)
+    );
+    
+    setFilteredFiles(matchedFiles);
+  }, [searchQuery, files, folders]);
+
   return (
     <div className="bg-gray-900 text-gray-300 h-full w-full flex flex-col border-r border-gray-700">
-      <div className="pt-10 px-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold text-white">File Explorer</h2>
-          {(userRole === "contributor" || userRole === "owner") && (
-            <div className="flex gap-1">
-              <button
-                onClick={() => {
-                  setCreatingParentFolderId(null);
-                  setNewItemName("");
-                  setCreatingType((prev) => (prev === "file" ? null : "file"));
-                }}
-                className="p-1 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 rounded-lg transition-all"
-                title="Create new file"
-              >
-                <PlusCircle size={16} className="text-white" />
-              </button>
-              <button
-                onClick={() => {
-                  setCreatingParentFolderId(null);
-                  setNewItemName("");
-                  setCreatingType((prev) => (prev === "folder" ? null : "folder"));
-                }}
-                className="p-1 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 rounded-lg transition-all"
-                title="Create new folder"
-              >
-                <Folder size={16} className="text-white" />
-              </button>
-            </div>
-          )}
+      <div className="px-3 pt-3">
+        <div 
+          className="flex items-center justify-between mb-3"
+          onDoubleClick={handleHeaderDoubleClick}
+        >
+          <h2 className="text-lg font-semibold text-white cursor-pointer pl-1">File Explorer</h2>
+          <div className="flex gap-2">
+            {(userRole === "contributor" || userRole === "owner") && (
+              <>
+                <button
+                  onClick={() => {
+                    setCreatingParentFolderId(null);
+                    setNewItemName("");
+                    setCreatingType((prev) => (prev === "file" ? null : "file"));
+                  }}
+                  className="p-1.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 rounded-lg transition-all"
+                  title="Create new file"
+                >
+                  <PlusCircle size={16} className="text-white" />
+                </button>
+                <button
+                  onClick={() => {
+                    setCreatingParentFolderId(null);
+                    setNewItemName("");
+                    setCreatingType((prev) => (prev === "folder" ? null : "folder"));
+                  }}
+                  className="p-1.5 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 rounded-lg transition-all"
+                  title="Create new folder"
+                >
+                  <Folder size={16} className="text-white" />
+                </button>
+              </>
+            )}
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="p-1.5 bg-gradient-to-r from-green-600 to-teal-700 hover:from-green-700 hover:to-teal-800 rounded-lg transition-all"
+              title="Search files"
+            >
+              <Search size={16} className="text-white" />
+            </button>
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              className="p-1.5 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 rounded-lg transition-all"
+              title="Help & Documentation"
+            >
+              <FileText size={16} className="text-white" />
+            </button>
+          </div>
         </div>
+        
+        {/* Search Modal */}
+        {showSearch && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-4 rounded-lg w-96">
+              <h3 className="text-lg font-semibold text-white mb-3">Search Files</h3>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Enter file name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-gray-700 text-white px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
+                  autoFocus
+                />
+              </div>
+              {searchQuery && (
+                <div className="mt-3 max-h-60 overflow-y-auto">
+                  {filteredFiles.length === 0 ? (
+                    <p className="text-gray-400 text-sm">No files found</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {filteredFiles.map((file) => (
+                        <li
+                          key={file.id}
+                          className="flex items-center px-2 py-1.5 hover:bg-gray-700 rounded cursor-pointer"
+                          onClick={() => {
+                            openFile(file);
+                            setShowSearch(false);
+                            setSearchQuery("");
+                          }}
+                        >
+                          {getFileIcon(file.name)}
+                          <span className={getFileColor(file.name)}>{file.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => {
+                    setShowSearch(false);
+                    setSearchQuery("");
+                  }}
+                  className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Help Documentation Modal */}
+        {showHelp && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-4 rounded-lg w-96 max-h-[80vh] overflow-y-auto">
+              <h3 className="text-lg font-semibold text-white mb-3">Help & Documentation</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-white font-medium mb-2">Keyboard Shortcuts</h4>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex justify-between">
+                      <span className="text-gray-400">Search Files</span>
+                      <span className="text-gray-300">Ctrl/Cmd + F</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-gray-400">New File</span>
+                      <span className="text-gray-300">Ctrl/Cmd + N</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-gray-400">Save File</span>
+                      <span className="text-gray-300">Ctrl/Cmd + S</span>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium mb-2">File Operations</h4>
+                  <ul className="space-y-1 text-sm text-gray-400">
+                    <li>• Double-click folder to expand/collapse</li>
+                    <li>• Drag and drop files between folders</li>
+                    <li>• Right-click for more options</li>
+                    <li>• Click file to open in editor</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium mb-2">Search Tips</h4>
+                  <ul className="space-y-1 text-sm text-gray-400">
+                    <li>• Search is case-insensitive</li>
+                    <li>• Matches partial file names</li>
+                    <li>• Press Enter to focus first result</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div
@@ -517,56 +714,110 @@ body {
           </div>
         )}
 
-        {folders
-          .filter((folder) => !folder.parentFolderId)
-          .map((folder) => renderFolder(folder))}
-
-        {files
-          .filter((file) => !file.folderId)
-          .map((file) => (
-            <div
-              key={file.id}
-              className="flex items-center justify-between group hover:bg-gray-800 px-2 py-1 rounded transition-colors"
-              draggable
-              onDragStart={(e) => handleDragStart(e, file, "file")}
-              onDragOver={(e) => handleDragOver(e, null)}
-              onDrop={(e) => handleDrop(e, null)}
-            >
-              <div
-                className="flex items-center cursor-pointer flex-1 border-l border-gray-700 ml-1 px-2 py-1"
-                onClick={() => openFile(file)}
-              >
-                {getFileIcon(file.name)}
-                {renamingItem?.id === file.id ? (
-                  <input
-                    className="text-sm bg-gray-700 text-white px-1 rounded"
-                    value={renamingItem.name}
-                    onChange={(e) => setRenamingItem({ ...renamingItem, name: e.target.value })}
-                    onBlur={renameItem}
-                    onKeyPress={(e) => e.key === "Enter" && renameItem()}
-                    autoFocus
-                  />
-                ) : (
-                  <span
-                    className={`text-sm ${getFileColor(file.name)}`}
-                    onDoubleClick={() => setRenamingItem({ id: file.id, name: file.name, type: "file" })}
-                  >
-                    {truncateName(file.name)}
-                  </span>
-                )}
+        {/* Display search results when searching */}
+        {isSearching ? (
+          <div className="mt-1">
+            {filteredFiles.length === 0 && filteredFolders.length === 0 ? (
+              <div className="text-center py-3 text-gray-400 text-sm">
+                No files or folders match your search
               </div>
-              {(userRole === "contributor" || userRole === "owner") && (
-                <Trash
-                  size={14}
-                  className="text-gray-400 hover:text-red-400 cursor-pointer opacity-0 group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteItem("files", file.id);
-                  }}
-                />
-              )}
-            </div>
-          ))}
+            ) : (
+              <>
+                {/* Search results heading */}
+                <div className="px-2 py-1 text-xs text-gray-400 font-semibold">
+                  Search results for "{searchQuery}"
+                </div>
+                
+                {/* Search results only show files */}
+                
+                {/* Files in search results */}
+                {filteredFiles.length > 0 && (
+                  <div>
+                    <div className="px-2 py-1 text-xs text-gray-500">Files</div>
+                    {filteredFiles.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between group hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+                        onClick={() => openFile(file)}
+                      >
+                        <div className="flex items-center cursor-pointer flex-1">
+                          {getFileIcon(file.name)}
+                          <span className={`text-sm ${getFileColor(file.name)}`}>
+                            {file.name}
+                          </span>
+                        </div>
+                        {(userRole === "contributor" || userRole === "owner") && (
+                          <Trash
+                            size={14}
+                            className="text-gray-400 hover:text-red-400 cursor-pointer opacity-0 group-hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteItem("files", file.id);
+                            }}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Regular file explorer view when not searching */}
+            {folders
+              .filter((folder) => !folder.parentFolderId)
+              .map((folder) => renderFolder(folder))}
+
+            {files
+              .filter((file) => !file.folderId)
+              .map((file) => (
+                <div
+                  key={file.id}
+                  className="flex items-center justify-between group hover:bg-gray-800 px-2 py-1 rounded transition-colors"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, file, "file")}
+                  onDragOver={(e) => handleDragOver(e, null)}
+                  onDrop={(e) => handleDrop(e, null)}
+                >
+                  <div
+                    className="flex items-center cursor-pointer flex-1 border-l border-gray-700 ml-1 px-2 py-1"
+                    onClick={() => openFile(file)}
+                  >
+                    {getFileIcon(file.name)}
+                    {renamingItem?.id === file.id ? (
+                      <input
+                        className="text-sm bg-gray-700 text-white px-1 rounded"
+                        value={renamingItem.name}
+                        onChange={(e) => setRenamingItem({ ...renamingItem, name: e.target.value })}
+                        onBlur={renameItem}
+                        onKeyPress={(e) => e.key === "Enter" && renameItem()}
+                        autoFocus
+                      />
+                    ) : (
+                      <span
+                        className={`text-sm ${getFileColor(file.name)}`}
+                        onDoubleClick={() => setRenamingItem({ id: file.id, name: file.name, type: "file" })}
+                      >
+                        {truncateName(file.name)}
+                      </span>
+                    )}
+                  </div>
+                  {(userRole === "contributor" || userRole === "owner") && (
+                    <Trash
+                      size={14}
+                      className="text-gray-400 hover:text-red-400 cursor-pointer opacity-0 group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteItem("files", file.id);
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+          </>
+        )}
       </div>
     </div>
   );
