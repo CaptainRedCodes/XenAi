@@ -342,20 +342,20 @@ export default function CodeEditor({ file }) {
               <div className="flex gap-3 items-center">
                 <button
                   onClick={toggleExpand}
-                  className="flex items-center justify-center p-2 rounded-md text-gray-300 hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg transition-all"
                 >
                   {isExpanded ? <Shrink size={18} /> : <Expand size={18} />}
                 </button>
                 <button
                   onClick={() => setShowSettings(!showSettings)}
-                  className="flex items-center justify-center p-2 rounded-md text-gray-300 hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg transition-all"
                 >
                   <Settings size={18} />
                 </button>
                 <button
                   onClick={fixSyntaxErrors}
                   disabled={isFixing}
-                  className="flex items-center justify-center p-2 rounded-md text-gray-300 hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-lg transition-all"
                 >
                   {isFixing ? (
                     <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
@@ -366,7 +366,7 @@ export default function CodeEditor({ file }) {
                 <button
                   onClick={generateDocs}
                   disabled={isLoading}
-                  className="flex items-center justify-center p-2 rounded-md text-gray-300 hover:bg-gray-700 transition-colors"
+                  className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-lg transition-all"
                 >
                   {isLoading ?(
                     <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />

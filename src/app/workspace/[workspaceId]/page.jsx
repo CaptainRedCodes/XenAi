@@ -6,7 +6,7 @@ import { db, auth } from "@/config/firebase";
 import Chat from "@/components/Chat";
 import Editor from "@/components/Editor";
 import SearchBar from "@/components/Searchbar";
-import { MessageCircle, PanelLeftOpen, LayoutDashboard, Search, FileSearch, Settings, Code, Terminal, HelpCircle, Shrink, Expand } from "lucide-react";
+import { MessageCircle, PanelLeftOpen, LayoutDashboard, Search, FileSearch, Settings, Code, Terminal, HelpCircle, Shrink, Expand, Sparkles, X } from "lucide-react";
 import ShowMembers from "@/components/Members";
 import LiveCursor from "@/components/LiveCursor";
 import NavPanel from "@/components/Navpanel";
@@ -136,6 +136,53 @@ const Workspace = () => {
         }
     };
 
+    // State for search functionality
+    const [searchQuery, setSearchQuery] = useState("");
+    const [filteredFiles, setFilteredFiles] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Handle search functionality
+    useEffect(() => {
+        if (searchQuery.trim() === "") {
+            setFilteredFiles([]);
+            setIsSearching(false);
+            return;
+        }
+
+        setIsSearching(true);
+        const query = searchQuery.toLowerCase();
+        
+        // Filter files based on search query
+        const fetchFiles = async () => {
+            const filesRef = collection(db, `workspaces/${workspaceId}/files`);
+            const filesSnap = await getDocs(filesRef);
+            const allFiles = filesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            const matchedFiles = allFiles.filter(file => 
+                file.name.toLowerCase().includes(query)
+            );
+            
+            setFilteredFiles(matchedFiles);
+        };
+        
+        fetchFiles();
+    }, [searchQuery, workspaceId]);
+
+    // Function to get file icon based on extension
+    const getFileIcon = (fileName) => {
+        const parts = fileName.split('.');
+        const ext = parts.length > 1 ? parts.pop().toLowerCase() : '';
+        
+        switch(ext) {
+            case 'js': case 'jsx': case 'ts': case 'tsx':
+                return <Code size={16} className="mr-2 text-yellow-400" />;
+            case 'html': case 'css':
+                return <FileText size={16} className="mr-2 text-blue-400" />;
+            default:
+                return <File size={16} className="mr-2 text-gray-400" />;
+        }
+    };
+
     // Render the active panel content
     const renderPanelContent = () => {
         if (!isNavOpen) return null;
@@ -143,20 +190,115 @@ const Workspace = () => {
         switch (activePanel) {
             case "files":
                 return <NavPanel workspaceId={workspaceId} openFile={setSelectedFile} />;
-            case "terminal":
+            case "search":
                 return (
-                    <div className="p-4 h-full">
-                        <h2 className="text-xl font-semibold mb-4 text-green-400">Terminal</h2>
-                        <div className="bg-black rounded-lg p-3 h-[calc(100%-3rem)] overflow-auto font-mono text-sm">
-                            <div className="text-green-500 mb-2">$ Connected to workspace terminal</div>
-                            <div className="text-gray-300">Type commands to interact with your workspace environment.</div>
-                            <div className="mt-4 flex items-center">
-                                <span className="text-blue-400 mr-2">$</span>
-                                <input 
-                                    type="text" 
-                                    className="bg-transparent border-none outline-none text-white flex-1"
-                                    placeholder="Type your command here..."
-                                />
+                    <div className="p-4 h-full flex flex-col">
+                        <h2 className="text-xl font-semibold mb-4 text-indigo-400">Search Files</h2>
+                        <div className="relative mb-4">
+                            <input
+                                type="text"
+                                className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                placeholder="Search files..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                autoFocus
+                            />
+                            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+                            {searchQuery && (
+                                <button
+                                    className="absolute right-3 top-2.5 text-gray-400 hover:text-white"
+                                    onClick={() => setSearchQuery("")}
+                                >
+                                    <X size={18} />
+                                </button>
+                            )}
+                        </div>
+                        
+                        {/* Display search results */}
+                        <div className="flex-1 overflow-auto">
+                            {isSearching ? (
+                                <div className="mt-1">
+                                    {filteredFiles.length === 0 ? (
+                                        <div className="text-center py-3 text-gray-400 text-sm">
+                                            No files match your search
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Search results heading */}
+                                            <div className="px-2 py-1 text-xs text-gray-400 font-semibold">
+                                                Search results for "{searchQuery}"
+                                            </div>
+                                            
+                                            {/* Files in search results */}
+                                            <div>
+                                                <div className="px-2 py-1 text-xs text-gray-500">Files</div>
+                                                {filteredFiles.map((file) => (
+                                                    <div
+                                                        key={file.id}
+                                                        className="flex items-center justify-between group hover:bg-gray-800 px-2 py-1 rounded transition-colors cursor-pointer"
+                                                        onClick={() => {
+                                                            setSelectedFile(file);
+                                                            setActivePanel("files");
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center flex-1">
+                                                            {getFileIcon(file.name)}
+                                                            <span className="text-sm">
+                                                                {file.name}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 text-gray-400">
+                                    <FileSearch size={48} className="mx-auto mb-4 opacity-50" />
+                                    <p>Type to search for files</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            case "help":
+                return (
+                    <div className="p-4 h-full overflow-auto">
+                        <h2 className="text-xl font-semibold mb-4 text-blue-400">Help & Documentation</h2>
+                        
+                        <div className="space-y-6">
+                            <div className="bg-gray-800 rounded-lg p-4">
+                                <h3 className="text-lg font-medium text-blue-300 mb-2">Getting Started</h3>
+                                <p className="text-gray-300 mb-2">Welcome to Xen.ai, your AI-powered collaborative code editor!</p>
+                                <ul className="list-disc pl-5 text-gray-300 space-y-1">
+                                    <li>Create and manage files in the File Explorer</li>
+                                    <li>Use the Search feature to find files quickly</li>
+                                    <li>Get AI assistance with the AI Chat button</li>
+                                </ul>
+                            </div>
+                            
+                            <div className="bg-gray-800 rounded-lg p-4">
+                                <h3 className="text-lg font-medium text-indigo-300 mb-2">Keyboard Shortcuts</h3>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="text-gray-400">Ctrl/Cmd + S</div>
+                                    <div className="text-gray-300">Save file</div>
+                                    <div className="text-gray-400">Ctrl/Cmd + F</div>
+                                    <div className="text-gray-300">Search in file</div>
+                                    <div className="text-gray-400">Ctrl/Cmd + /</div>
+                                    <div className="text-gray-300">Toggle comment</div>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-gray-800 rounded-lg p-4">
+                                <h3 className="text-lg font-medium text-purple-300 mb-2">AI Features</h3>
+                                <p className="text-gray-300 mb-2">Xen.ai comes with powerful AI capabilities:</p>
+                                <ul className="list-disc pl-5 text-gray-300 space-y-1">
+                                    <li>Code completion and suggestions</li>
+                                    <li>Bug detection and fixing</li>
+                                    <li>Natural language to code conversion</li>
+                                    <li>Code explanation and documentation</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -215,7 +357,7 @@ const Workspace = () => {
                 <div className="absolute top-0 left-0 z-20 h-full bg-gray-900 border-r border-gray-800 flex flex-col items-center py-6 px-2 space-y-8 shadow-lg">
                     {/* File Panel Toggle */}
                     <button
-                        className={`p-2 rounded-lg transition-colors ${activePanel === 'files' ? 'bg-blue-600 text-white' : 'hover:bg-gray-800 text-gray-300 hover:text-white'}`}
+                        className={`p-2 rounded-lg transition-all duration-300 ${activePanel === 'files' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg' : 'hover:bg-gray-800'} text-white`}
                         onClick={() => {
                             setIsNavOpen(true);
                             handlePanelChange("files");
@@ -228,7 +370,7 @@ const Workspace = () => {
                     
                     {/* AI Chat Button */}
                     <button
-                        className={`p-2 rounded-lg transition-colors ${activePanel === 'chat' ? 'bg-teal-600 text-white' : 'hover:bg-gray-800 text-gray-300 hover:text-white'}`}
+                        className={`p-2 rounded-lg transition-all duration-300 ${activePanel === 'chat' ? 'bg-gradient-to-r from-teal-600 to-emerald-600 shadow-lg' : 'hover:bg-gray-800'} text-white`}
                         onClick={() => handlePanelChange("chat")}
                         title="AI Chat"
                     >
@@ -237,26 +379,26 @@ const Workspace = () => {
                     
                     {/* Search Files Button */}
                     <button
-                        className={`p-2 rounded-lg transition-colors ${activePanel === 'search' ? 'bg-indigo-600 text-white' : 'hover:bg-gray-800 text-gray-300 hover:text-white'}`}
+                        className={`p-2 rounded-lg transition-all duration-300 ${activePanel === 'search' ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg' : 'hover:bg-gray-800'} text-white`}
                         onClick={() => {
                             setIsNavOpen(true);
-                            handlePanelChange("files"); // Changed to use the file explorer with search functionality
+                            handlePanelChange("search");
                         }}
                         title="Search Files"
                     >
                         <FileSearch size={22} />
                     </button>
                     
-                    {/* Terminal Button */}
+                    {/* Help/Documentation Button */}
                     <button
-                        className={`p-2 rounded-lg transition-colors ${activePanel === 'terminal' ? 'bg-green-600 text-white' : 'hover:bg-gray-800 text-gray-300 hover:text-white'}`}
+                        className={`p-2 rounded-lg transition-all duration-300 ${activePanel === 'help' ? 'bg-gradient-to-r from-indigo-600 to-blue-600 shadow-lg' : 'hover:bg-gray-800'} text-white`}
                         onClick={() => {
                             setIsNavOpen(true);
-                            handlePanelChange("terminal");
+                            handlePanelChange("help");
                         }}
-                        title="Terminal"
+                        title="Help & Documentation"
                     >
-                        <Terminal size={22} />
+                        <HelpCircle size={22} />
                     </button>
                 </div>
 
@@ -268,9 +410,9 @@ const Workspace = () => {
                 </div>
 
                 {/* Main - Editor Content */}
-                <main className="flex-1 h-full flex flex-col overflow-auto">
-                    {/* Editor Content */}
-                    <div className="flex-1 overflow-auto">
+                <main className="flex-1 h-screen flex flex-col overflow-auto">
+                    {/* Editor Content - Full screen height */}
+                    <div className="flex-1 overflow-auto h-full">
                         {/* Show loading spinner if workspace is loading */}
                         {loading ? (
                             <LoadingSpinner />
@@ -290,13 +432,16 @@ const Workspace = () => {
                 )}
             </aside>
 
-            {/* Chat Toggle Button (only shown when chat is closed and sidebar button is not used) */}
+            {/* Chat Toggle Button (only shown when chat is closed) */}
             {!isChatOpen && (
                 <button
-                    className="fixed bottom-6 right-10 z-30 py-3 font-mono px-5 flex items-center gap-2 text-xl bg-teal-700/30 ring-1 ring-teal-500 animate-bounce hover:bg-teal-800 text-white rounded-full shadow-lg md:hidden"
+                    className="fixed bottom-6 right-10 z-30 p-4 flex items-center gap-2 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 group"
                     onClick={() => setIsChatOpen(!isChatOpen)}
+                    title="Open AI Chat"
                 >
-                    <MessageCircle className="h-8 w-8" /> AI-Chat
+                    <div className="absolute inset-0 bg-white rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                    <Sparkles className="h-6 w-6 text-white group-hover:animate-pulse" />
+                    <span className="pr-2 font-semibold">Xen.ai</span>
                 </button>
             )}
             <LiveCursor workspaceId={workspaceId} />

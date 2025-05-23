@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { ClipboardDocumentIcon, CheckIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
-import { MessageSquarePlus, Send, Sparkles, Trash, Trash2, X, XCircle, Brain, Clock, FileText, Zap, StopCircle, Bot, User, Copy, Check } from "lucide-react";
+import { MessageSquarePlus, Send, Sparkles, Trash, Trash2, X, XCircle, Clock, FileText, Zap, StopCircle, Bot, User, Copy, Check } from "lucide-react";
 
 // Import the custom hooks
 import { useChatStreaming } from '@/hooks/useChatStreaming';
@@ -185,7 +185,7 @@ function Chatroom({ workspaceId, setIsChatOpen }) {
     
     const messageText = newMessage.trim();
     const imageUrl = auth.currentUser?.photoURL;
-    const aiMatch = messageText.match(/@(.+)/);
+    const aiMatch = messageText.match(/@X(.+)/);
     const aiPrompt = aiMatch?.[1]?.trim();
     
     // Clear input immediately for better UX
@@ -614,7 +614,7 @@ function Chatroom({ workspaceId, setIsChatOpen }) {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={isStreaming ? "AI is responding..." : "Type your message... (@ for AI)"}
+                placeholder={isStreaming ? "AI is responding..." : "Type your message... (@X for AI)"}
                 disabled={isStreaming}
                 className="w-full bg-gray-800/60 border border-gray-600/50 text-gray-200 placeholder-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-transparent pr-12 py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />

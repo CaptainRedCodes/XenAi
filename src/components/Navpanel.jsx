@@ -12,7 +12,7 @@ import {
 import { db, auth } from "@/config/firebase";
 import {
   Folder,
-  File,
+  File as FileIcon,
   PlusCircle,
   Trash,
   ChevronDown,
@@ -45,6 +45,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [filteredFiles, setFilteredFiles] = useState([]);
+  const [filteredFolders, setFilteredFolders] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
 
@@ -96,7 +97,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
     } else if (archiveExts.includes(ext)) {
       return <FileArchive size={16} className="mr-2 text-amber-400" />;
     } else {
-      return <File size={16} className="mr-2 text-orange-400" />;
+      return <FileIcon size={16} className="mr-2 text-orange-400" />;
     }
   };
 
@@ -421,7 +422,7 @@ body {
                   setFolderStates({ ...folderStates, [folder.id]: true });
                 }}
               />
-              <File
+              <FileIcon
                 size={14}
                 className="text-orange-400 cursor-pointer"
                 onClick={(e) => {
