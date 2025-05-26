@@ -9,7 +9,6 @@ import {
   updateDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { db, auth } from "@/config/firebase";
 import {
   Folder,
   File as FileIcon,
@@ -30,6 +29,10 @@ import {
 } from "lucide-react";
 import { BOILERPLATES } from "@/constants";
 import { useRouter } from "next/navigation";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/config/firebase";
+import { app, db, auth, firestore, rtdb } from "@/config/firebase";
+import { ToastContainer, toast } from 'react-toastify';
 
 const NavPanel = ({ workspaceId, openFile }) => {
   const [folders, setFolders] = useState([]);
@@ -47,6 +50,8 @@ const NavPanel = ({ workspaceId, openFile }) => {
   const [filteredFiles, setFilteredFiles] = useState([]);
   const [filteredFolders, setFilteredFolders] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const router = useRouter();
 
   // Function to refresh file and folder lists after upload
@@ -81,7 +86,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
   // Get file icon based on extension
   const getFileIcon = (fileName) => {
     const ext = getFileExtension(fileName);
-    
+
     // Programming languages
     const codeExts = ['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'cs', 'go', 'rb', 'php', 'html', 'css', 'scss'];
     // Config files
@@ -123,7 +128,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
   // Get color for file based on extension
   const getFileColor = (fileName) => {
     const ext = getFileExtension(fileName);
-    
+
     // Color mapping based on file type
     const colorMap = {
       'js': 'text-yellow-300',
@@ -152,12 +157,12 @@ const NavPanel = ({ workspaceId, openFile }) => {
 
     setIsSearching(true);
     const query = searchQuery.toLowerCase();
-    
+
     // Filter files based on search query
-    const matchedFiles = files.filter(file => 
+    const matchedFiles = files.filter(file =>
       file.name.toLowerCase().includes(query)
     );
-    
+
     setFilteredFiles(matchedFiles);
   }, [searchQuery, files]);
 
@@ -275,7 +280,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
         if (!fileName.includes('.')) {
           fileName = `${fileName}.txt`;
         }
-        
+
         await addDoc(collection(db, `workspaces/${workspaceId}/files`), {
           name: fileName,
           folderId: creatingParentFolderId,
@@ -301,7 +306,7 @@ const NavPanel = ({ workspaceId, openFile }) => {
   // Generate boilerplate code based on file extension
   const generateBoilerplate = (fileName) => {
     const ext = getFileExtension(fileName);
-    
+
     // Map file extensions to boilerplate keys
     const extensionToKey = {
       'js': 'javascript',
@@ -317,10 +322,10 @@ const NavPanel = ({ workspaceId, openFile }) => {
       'md': 'markdown',
       'txt': 'text'
     };
-    
+
     // Get the appropriate key for the boilerplate
     const boilerplateKey = extensionToKey[ext] || ext;
-    
+
     // Custom boilerplates for some file types not in the imported BOILERPLATES
     const customBoilerplates = {
       'css': `/* 
@@ -341,7 +346,7 @@ body {
 }
 `
     };
-    
+
     // Return the boilerplate from the imported BOILERPLATES if available, otherwise from custom ones
     return BOILERPLATES[boilerplateKey] || customBoilerplates[ext] || '';
   };
@@ -353,7 +358,7 @@ body {
       const collectionName = renamingItem.type === "folder" ? "folders" : "files";
       await updateDoc(
         doc(db, `workspaces/${workspaceId}/${collectionName}/${renamingItem.id}`),
-        { 
+        {
           name: renamingItem.name,
           ...(renamingItem.type === "file" && {
             fileType: getFileExtension(renamingItem.name),
@@ -546,19 +551,87 @@ body {
 
     setIsSearching(true);
     const query = searchQuery.toLowerCase();
-    
+
     // Filter files based on search query
-    const matchedFiles = files.filter(file => 
+    const matchedFiles = files.filter(file =>
       file.name.toLowerCase().includes(query)
     );
-    
+
     setFilteredFiles(matchedFiles);
   }, [searchQuery, files, folders]);
+
+
+  const readFileContent = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  };
+  const handleUpload = async () => {
+    if (!file || !auth.currentUser?.uid || !workspaceId) {
+      alert("Missing required info.");
+      return;
+    }
+
+    setUploading(true);
+    const fileName = file.name;
+    const fileType = getFileExtension(fileName);
+    const now = new Date().toISOString();
+
+    try {
+      // Read file content as text
+      const content = await readFileContent(file);
+
+      // Add directly to Firestore (same structure as your manually created files)
+      await addDoc(collection(db, `workspaces/${workspaceId}/files`), {
+        name: fileName,
+        fileType,
+        content,
+        workspaceId,
+        folderId: null, // Root level file (no folder)
+        createdAt: now,
+        updatedAt: now,
+        lastModified: file.lastModified ? new Date(file.lastModified).toISOString() : now
+      });
+
+      toast.success("File uploaded successfully!");
+      setFile(null); // Clear file selection
+
+      // Auto-open the uploaded file (optional)
+      setTimeout(() => {
+        const uploadedFile = files.find(f => f.name === fileName);
+        if (uploadedFile) {
+          openFile(uploadedFile);
+        }
+      }, 500);
+
+    } catch (err) {
+      console.error("Upload failed:", err);
+      toast.error(`Upload failed: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+  const MAX_FILE_SIZE = 1024 * 1024 * 2; // 1MB limit
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE) {
+        toast.error("File too large. Maximum size is 2MB.");
+        return;
+      }
+      setFile(selectedFile);
+    }
+  };
+
 
   return (
     <div className="bg-gray-900 text-gray-300 h-full w-full flex flex-col border-r border-gray-700">
       <div className="px-3 pt-3">
-        <div 
+        <div
           className="flex items-center justify-between mb-3"
           onDoubleClick={handleHeaderDoubleClick}
         >
@@ -577,6 +650,52 @@ body {
                 >
                   <PlusCircle size={16} className="text-white" />
                 </button>
+
+
+
+
+                <div className="flex items-center gap-1">
+                  <input
+                    type="file"
+                    id="file-upload"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    accept=".txt,.js,.jsx,.ts,.tsx,.py,.html,.css,.md,.json" // Add any file types you want to allow
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="p-1.5 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 rounded-lg transition-all cursor-pointer"
+                    title="Upload file"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <polyline points="14,2 14,8 20,8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <polyline points="9,15 12,12 15,15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </label>
+                  {file && (
+                    <button
+                      onClick={handleUpload}
+                      disabled={uploading}
+                      className="p-1.5 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 rounded-lg transition-all disabled:opacity-50"
+                      title={uploading ? "Uploading..." : "Upload selected file"}
+                    >
+                      {uploading ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
+                          <polyline points="20,6 9,17 4,12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+
+
+
+
                 <button
                   onClick={() => {
                     setCreatingParentFolderId(null);
@@ -590,7 +709,7 @@ body {
                 </button>
               </>
             )}
- 
+
             <button
               onClick={() => setShowHelp(!showHelp)}
               className="p-1.5 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 rounded-lg transition-all"
@@ -600,7 +719,7 @@ body {
             </button>
           </div>
         </div>
-        
+
         {/* Search Modal */}
         {showSearch && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -741,9 +860,9 @@ body {
                 <div className="px-2 py-1 text-xs text-gray-400 font-semibold">
                   Search results for "{searchQuery}"
                 </div>
-                
+
                 {/* Search results only show files */}
-                
+
                 {/* Files in search results */}
                 {filteredFiles.length > 0 && (
                   <div>
@@ -830,10 +949,12 @@ body {
                   )}
                 </div>
               ))}
+            <ToastContainer />
           </>
         )}
       </div>
     </div>
+
   );
 };
 

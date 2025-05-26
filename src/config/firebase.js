@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getDatabase } from "firebase/database";  // ✅ Import Realtime Database
+import { getDatabase } from "firebase/database";
 
 // Your web app's Firebase configuration
 
@@ -32,5 +32,5 @@ setPersistence(auth, browserLocalPersistence)
   .then(() => console.log("Firebase Auth Persistence Set to Local"))
   .catch((error) => console.error("Firebase Auth Persistence Error:", error));
 
-export { auth, db, rtdb,firestore };
+export { auth, db, rtdb,firestore};
 export default app;
