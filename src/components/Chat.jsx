@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { ClipboardDocumentIcon, CheckIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
-import { MessageSquarePlus, Send, Sparkles, Trash, Trash2, X, XCircle, Clock, FileText, Zap, StopCircle, Bot, User, Copy, Check } from "lucide-react";
+import { MessageSquarePlus, Send, Sparkles, Trash, Trash2, X, XCircle, Clock, FileText, Zap, StopCircle, Brain, Bot, User, Copy, Check } from "lucide-react";
 
 // Import the custom hooks
 import { useChatStreaming } from '@/hooks/useChatStreaming';

@@ -28,6 +28,7 @@ import {
   FileArchive,
   Search,
 } from "lucide-react";
+import UploadButton from "./UploadButton";
 import { BOILERPLATES } from "@/constants";
 import { useRouter } from "next/navigation";
 
@@ -48,6 +49,25 @@ const NavPanel = ({ workspaceId, openFile }) => {
   const [filteredFolders, setFilteredFolders] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const router = useRouter();
+
+  // Function to refresh file and folder lists after upload
+  const refreshFileList = (uploadedFile) => {
+    // Wait a short time for Firestore to sync, then open the uploaded file
+    if (uploadedFile && uploadedFile.name) {
+      let attempts = 0;
+      const tryOpen = () => {
+        const file = files.find(f => f.name === uploadedFile.name);
+        if (file) {
+          openFile(file);
+        } else if (attempts < 5) {
+          attempts++;
+          setTimeout(tryOpen, 400);
+        }
+      };
+      tryOpen();
+    }
+    // The existing onSnapshot listeners will automatically update the state
+  };
 
   const truncateName = (name) => {
     return name.length > 20 ? `${name.substring(0, 20)}...` : name;
@@ -569,15 +589,10 @@ body {
                 >
                   <Folder size={16} className="text-white" />
                 </button>
+                <UploadButton workspaceId={workspaceId} onUploadComplete={refreshFileList} />
               </>
             )}
-            <button
-              onClick={() => setShowSearch(!showSearch)}
-              className="p-1.5 bg-gradient-to-r from-green-600 to-teal-700 hover:from-green-700 hover:to-teal-800 rounded-lg transition-all"
-              title="Search files"
-            >
-              <Search size={16} className="text-white" />
-            </button>
+ 
             <button
               onClick={() => setShowHelp(!showHelp)}
               className="p-1.5 bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-700 hover:to-orange-800 rounded-lg transition-all"

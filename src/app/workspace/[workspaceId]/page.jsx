@@ -1,17 +1,33 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, collection, getDocs } from "firebase/firestore";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { db, auth } from "@/config/firebase";
+import { doc, getDoc, onSnapshot, collection, query, where, getDocs } from "firebase/firestore";
 import Chat from "@/components/Chat";
 import Editor from "@/components/Editor";
 import SearchBar from "@/components/Searchbar";
-import { MessageCircle, PanelLeftOpen, LayoutDashboard, Search, FileSearch, Settings, Code, Terminal, HelpCircle, Shrink, Expand, Sparkles, X } from "lucide-react";
+import {
+    MessageCircle,
+    PanelLeftOpen,
+    FileSearch,
+    HelpCircle,
+    LayoutDashboard,
+    Sparkles,
+    Upload,
+    Play,
+    Code,
+    Search,
+    Settings,
+    Terminal,
+    Shrink,
+    Expand,
+    X
+} from "lucide-react";
 import ShowMembers from "@/components/Members";
 import LiveCursor from "@/components/LiveCursor";
 import NavPanel from "@/components/Navpanel";
 import { LANGUAGE_VERSIONS } from "@/constants";
-import Link from "next/link";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 // Loading spinner component
@@ -377,17 +393,7 @@ const Workspace = () => {
                         <MessageCircle size={22} />
                     </button>
                     
-                    {/* Search Files Button */}
-                    <button
-                        className={`p-2 rounded-lg transition-all duration-300 ${activePanel === 'search' ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg' : 'hover:bg-gray-800'} text-white`}
-                        onClick={() => {
-                            setIsNavOpen(true);
-                            handlePanelChange("search");
-                        }}
-                        title="Search Files"
-                    >
-                        <FileSearch size={22} />
-                    </button>
+
                     
                     {/* Help/Documentation Button */}
                     <button

@@ -1,5 +1,5 @@
 "use client";
-import { Moon, Sun, Sparkles, Wrench, File, Expand, Shrink, Settings } from "lucide-react";
+import { Moon, Sun, Sparkles, Wrench, File, Expand, Shrink, Settings, ChevronDown, ChevronRight, Play } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Editor, { useMonaco } from "@monaco-editor/react";
 import axios from "axios";
@@ -52,6 +52,7 @@ export default function CodeEditor({ file }) {
   const [currentCode, setCurrentCode] = useState("");
   const [isFixing, setIsFixing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showOutput, setShowOutput] = useState(true);
   const [codeLanguage, setCodeLanguage] = useState("javascript");
   const [isEditorReady, setIsEditorReady] = useState(false);
 
@@ -319,6 +320,30 @@ export default function CodeEditor({ file }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  
+  // Listen for toggle output panel event from left side panel button
+  useEffect(() => {
+    const handleToggleOutput = () => {
+      setShowOutput(prev => !prev);
+    };
+    
+    window.addEventListener('toggleOutputPanel', handleToggleOutput);
+    return () => window.removeEventListener('toggleOutputPanel', handleToggleOutput);
+  }, []);
+  
+  // Listen for trigger upload event from left side panel button
+  useEffect(() => {
+    const handleTriggerUpload = (event) => {
+      // Find the upload button in the DOM and trigger a click
+      const uploadButton = document.querySelector('[title="Upload Files"]');
+      if (uploadButton) {
+        uploadButton.click();
+      }
+    };
+    
+    window.addEventListener('triggerUpload', handleTriggerUpload);
+    return () => window.removeEventListener('triggerUpload', handleTriggerUpload);
+  }, []);
 
   // Available themes
   const themes = [
@@ -330,8 +355,8 @@ export default function CodeEditor({ file }) {
   return (
     <div className={`bg-gray-900 m-2 h-[94%] rounded-xl p-3 ${isExpanded ? "fixed inset-0 z-50 m-0" : "relative"}`}>
       <Box className="relative h-full">
-        <div className="flex h-full">
-          <Box w={isExpanded ? "100%" : "78%"} transition="all 0.3s ease" className="h-[100%]">
+        <div className="flex flex-col h-full">
+          <Box className="flex-1 h-full">
             <div className="flex justify-between items-center h-[10%] pr-12">
               {file && (
                 <div className="flex items-center bg-gray-900 text-white px-4 max-h-[50px] rounded-md shadow-md border border-gray-700 w-40">
@@ -373,6 +398,13 @@ export default function CodeEditor({ file }) {
                   ):(
                     <Sparkles size={18} />
                     )}
+                </button>
+                <button
+                  onClick={() => setShowOutput(!showOutput)}
+                  className="flex items-center justify-center p-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg transition-all"
+                  title={showOutput ? "Hide Run Code Panel" : "Show Run Code Panel"}
+                >
+                  <Play size={18} className={showOutput ? "rotate-90 transition-transform" : ""} />
                 </button>
               </div>
             </div>
@@ -425,7 +457,7 @@ export default function CodeEditor({ file }) {
             )}
 
             <Editor
-              height={isExpanded ? "calc(100vh - 100px)" : "92%"}
+              height={isExpanded ? "calc(100vh - 100px)" : showOutput ? "calc(65vh - 150px)" : "calc(100vh - 150px)"}
               theme={selectedTheme}
               language={codeLanguage}
               value={currentCode}
@@ -453,7 +485,13 @@ export default function CodeEditor({ file }) {
               }}
             />
           </Box>
-          {!isExpanded && <Output editorRef={editorRef} language={codeLanguage} />}
+          {!isExpanded && (
+            showOutput && (
+              <div className="h-[35vh] border-t border-gray-700">
+                <Output editorRef={editorRef} language={codeLanguage} />
+              </div>
+            )
+          )}
         </div>
       </Box>
     </div>
