@@ -6,32 +6,32 @@ const testimonials = [
   {
     id: "1",
     quote: "Xen.ai is at least a 2x improvement over Copilot. It's amazing having an AI pair programmer, and is an incredible accelerator for me and my team.",
-    author: "Ben Bernard",
+    author: "Mohammed Zubair A",
   },
   {
     id: "2",
     quote: "The Xen.ai tab completion while coding is occasionally so magic it defies reality - about ~25% of the time it is anticipating exactly what I want to do. It is enough to make you believe that eventually you'll be able to code at the speed of thought.",
-    author: "Kevin Whinnery",
+    author: "Mohammad Sameer J",
   },
   {
     id: "3",
     quote: "Xen.ai is hands down my biggest workflow improvement in years",
-    author: "Sawyer Hood",
+    author: "Rahul V",
   },
   {
     id: "4",
     quote: "I love writing code and Xen.ai is a necessity. Xen.ai is steps ahead of my brain, proposing multi-line edits so I type tab more than anything else.",
-    author: "Andrew Milich",
+    author: "Venkat sai Rahul",
   },
   {
     id: "5",
     quote: "Xen.ai is so good, and literally gets better/more feature-rich every couple of weeks.",
-    author: "Morgan McGuire",
+    author: "Bhuvan J",
   },
   {
     id: "6",
     quote: "Xen.ai is awesome! Someone finally put GPT into a code editor in a seamless way. It's so elegant and easy. No more copying and pasting. I'm an hour in and already hooked.",
-    author: "Andrew McCalip",
+    author: "Amrutesh",
   },
 ];
 

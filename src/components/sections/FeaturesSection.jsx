@@ -7,22 +7,46 @@ import { FadeIn, ScaleIn, SlideIn, StaggerContainer, StaggerItem } from '@/compo
 
 const features = [
   {
-    id: 'tab',
-    title: 'Tab, tab, tab',
-    description: 'Xen.ai lets you breeze through changes by predicting your next edit.',
-    videoUrl: 'https://assets.basehub.com/191e7e6d/ad4eb38cfa78d745acec4f5faf8d73c1/current-best-for-one-mp4.mp4',
+    id: 'workspaces',
+    title: 'Multiple Workspaces',
+    description: 'Effortlessly create and manage multiple workspaces for different projects, keeping your work organized and accessible.',
+    videoUrl: '/Assests/Dashboard.mp4',
   },
   {
-    id: 'codebase',
-    title: 'Knows your codebase',
-    description: 'Get answers from your codebase or refer to files or docs. Use the models code in one click.',
-    videoUrl: 'https://assets.basehub.com/191e7e6d/2c99e8a087f981290dc74d2b621a7192/current-best-for-two-mp4.mp4',
+    id: 'file-folder',
+    title: 'File & Folder Management',
+    description: 'Organize your codebase with intuitive file and folder creation, making project navigation seamless and efficient.',
+    videoUrl: '/Assests/FileFolder.mp4',
   },
   {
-    id: 'natural-language',
-    title: 'Edit in natural language',
-    description: 'Xen.ai lets you write code using instructions. Update entire classes or functions with a simple prompt.',
-    videoUrl: 'https://assets.basehub.com/191e7e6d/8ea9258a063943d01c1454f028b5294b/website-three-mp4.mp4',
+    id: 'collaboration',
+    title: 'Team Collaboration',
+    description: 'Invite multiple collaborators to your workspace and work together in real-time for maximum productivity.',
+    videoUrl: '/Assests/Invite.mp4',
+  },
+  {
+    id: 'onboarding',
+    title: 'Seamless Onboarding',
+    description: 'Accept workspace invitations instantly and get started with your team without any hassle.',
+    videoUrl: '/Assests/AcceptInvite.mp4',
+  },
+  {
+    id: 'team-chat',
+    title: 'Team Chat',
+    description: 'Initiate and manage conversations with your team directly within the editor for smooth communication.',
+    videoUrl: '/Assests/Chat.mp4',
+  },
+  {
+    id: 'instant-responses',
+    title: 'Instant Responses',
+    description: 'Experience real-time chat responses to keep your workflow uninterrupted and your team in sync.',
+    videoUrl: '/Assests/Chatresponse.mp4',
+  },
+  {
+    id: 'ai-chat',
+    title: 'AI Chat Assistant',
+    description: 'Get instant coding help and suggestions by chatting with Xen.ai (@X), your AI-powered assistant.',
+    videoUrl: '/Assests/AICHAT.mp4',
   },
 ];
 

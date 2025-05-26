@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Header from '@/components/sections/Header';
 
 export default function Pricing() {
   const plans = [
@@ -28,7 +29,8 @@ export default function Pricing() {
         'Real-time collaboration',
         'Priority support',
         'Custom integrations'
-      ]
+      ],
+      stripe: true
     },
     {
       name: 'Team',
@@ -42,12 +44,14 @@ export default function Pricing() {
         'Dedicated support',
         'Enterprise integrations',
         'Usage analytics'
-      ]
+      ],
+      stripe: true
     }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-purple-900">
+      <Header />
       <div className="container mx-auto px-4 py-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -70,7 +74,7 @@ export default function Pricing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 border border-gray-700 hover:border-blue-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10"
+              className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 border border-gray-700 hover:border-blue-500/70 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/20 hover:scale-105"
             >
               <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
               <div className="flex items-baseline mb-4">
@@ -78,9 +82,16 @@ export default function Pricing() {
                 <span className="text-gray-400 ml-2">/month</span>
               </div>
               <p className="text-gray-400 mb-6">{plan.description}</p>
-              <Button className="w-full mb-6" variant={index === 1 ? 'default' : 'outline'}>
+              <Button className="w-full mb-4" variant={index === 1 ? 'default' : 'outline'}>
                 Get Started
               </Button>
+              {plan.stripe && (
+                <a href="https://buy.stripe.com/test_4gwcNw0Qw0Qw0Qw4gg" target="_blank" rel="noopener noreferrer">
+                  <Button className="w-full mb-6 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold">
+                    Buy Now
+                  </Button>
+                </a>
+              )}
               <ul className="space-y-3">
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-center text-gray-300">

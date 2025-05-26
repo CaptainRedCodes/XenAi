@@ -57,71 +57,15 @@ export default function HeroSection() {
       {/* Editor Preview */}
       <div className="container mx-auto px-4 md:px-6 mt-10 relative z-10">
         <ScaleIn delay={0.8} className="max-w-5xl mx-auto">
-          <div className="rounded-lg overflow-hidden border border-white/10 shadow-2xl">
-            <div className="w-full h-8 bg-zinc-900 flex items-center justify-between px-4">
-              <div className="flex space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-              </div>
-              <div className="flex space-x-2">
-                <div className="w-4 h-4 text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z" />
-                    <path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="flex bg-zinc-950 w-full">
-              <div className="w-1/2 border-r border-white/10">
-                <div className="p-4 text-xs text-gray-400 font-mono">
-                  <div className="flex">
-                    <span className="text-gray-600 mr-4">1</span>
-                    <span><span className="text-purple-400">impl</span><span className="text-blue-400">&lt;'a&gt;</span> <span className="text-green-400">TransportStack</span></span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-gray-600 mr-4">2</span>
-                    <span>&nbsp;&nbsp;<span className="text-purple-400">fn</span> <span className="text-yellow-400">upgrade_listeners</span>(<span className="text-blue-400">&amp;mut</span> <span className="text-blue-400">self</span></span>
-                  </div>
-                  <div className="flex bg-red-900/30">
-                    <span className="text-gray-600 mr-4">3</span>
-                    <span>&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-red-400">upgrade_listeners</span>.<span className="text-yellow-400">Optional</span>.<span className="text-yellow-400">listen</span>();</span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-gray-600 mr-4">4</span>
-                    <span>&nbsp;&nbsp;</span>
-                  </div>
-                  <div className="flex">
-                    <span className="text-gray-600 mr-4">5</span>
-                    <span></span>
-                  </div>
-                </div>
-              </div>
-              <div className="w-1/2 p-4 bg-zinc-900">
-                <div className="mb-2 flex items-center">
-                  <span className="text-xs text-gray-400 font-mono mr-2">mod.rs</span>
-                  <span className="text-xs text-gray-500">Current File</span>
-                </div>
-                <div className="mb-4 text-sm text-gray-300">
-                  Could you make it easier to switch certificates in the transport listeners?
-                </div>
-                <div className="p-3 bg-zinc-800 rounded-lg mb-4 text-sm text-gray-300">
-                  I'll help modify the code to make certificate switching more flexible. The main changes will be to enhance the <span className="text-blue-400">TransportStack</span> trait and modify how certificates are handled in the <span className="text-blue-400">TLSSettings</span>. Here are the key changes:
-                </div>
-                <div className="flex justify-between items-center text-xs text-gray-500">
-                  <div className="flex items-center space-x-2">
-                    <span>mod.rs</span>
-                    <span>•</span>
-                    <span>⌘K</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>↑ Copy</span>
-                    <span>↓ Apply</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-zinc-950">
+            <Image
+              src="/Assests/Home.png"
+              alt="Xen.ai Home Preview"
+              width={1200}
+              height={700}
+              className="w-full h-auto object-cover"
+              priority
+            />
           </div>
         </ScaleIn>
       </div>

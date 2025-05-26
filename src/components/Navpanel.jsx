@@ -28,7 +28,6 @@ import {
   FileArchive,
   Search,
 } from "lucide-react";
-import UploadButton from "./UploadButton";
 import { BOILERPLATES } from "@/constants";
 import { useRouter } from "next/navigation";
 
@@ -589,7 +588,6 @@ body {
                 >
                   <Folder size={16} className="text-white" />
                 </button>
-                <UploadButton workspaceId={workspaceId} onUploadComplete={refreshFileList} />
               </>
             )}
  
