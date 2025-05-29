@@ -23,10 +23,10 @@ const Output = ({ editorRef, language }) => {
         result.stderr && `Runtime Error:\n${result.stderr}`,
         result.compile_output && `Compile Error:\n${result.compile_output}`,
       ].filter(Boolean).join("\n");
-      
+
       setOutput(out.split("\n"));
       setIsError(!!(result.stderr || result.compile_output));
-      
+
     } catch (error) {
       console.error(error);
       setIsError(true);
@@ -49,26 +49,19 @@ const Output = ({ editorRef, language }) => {
             style={{ fontFamily: '"JetBrains Mono", monospace' }}
           />
         </div>
+
         <div className="flex-shrink-0">
           <button
             onClick={runCode}
-            className="p-2 h-full text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 border border-indigo-500 rounded-lg shadow-lg transition-all transform hover:scale-105 font-medium flex items-center justify-center gap-2"
             disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
             title="Run Code"
           >
-            {isLoading ? (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                <span>Compiling...</span>
-              </div>
-            ) : (
-              <>
-                <Play size={20} />
-                <span className="font-semibold tracking-wide">RUN CODE</span>
-              </>
-            )}
+            <Play size={18} />
+            <span>Run Code</span>
           </button>
         </div>
+
       </div>
 
       <div

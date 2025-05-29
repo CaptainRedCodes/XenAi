@@ -3,7 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { auth, db } from "@/config/firebase";
 import { useRouter } from "next/navigation";
-import { collection, doc, getDoc, setDoc, updateDoc, arrayRemove, getDocs, query, where, limit } from "firebase/firestore";
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  query, 
+  where, 
+  orderBy, 
+  limit,
+  onSnapshot
+} from "firebase/firestore";
 import { sendPasswordResetEmail } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +22,17 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import logout from "@/helpers/logoutHelp";
-import { FaArrowLeft, FaCode, FaUsers, FaClock, FaStar } from "react-icons/fa";
+import { 
+  FaArrowLeft, 
+  FaCode, 
+  FaUsers, 
+  FaClock, 
+  FaStar, 
+  FaFileAlt,
+  FaPlus,
+  FaUserCheck,
+  FaEdit
+} from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -27,11 +47,14 @@ const Profile = () => {
   const [invites, setInvites] = useState([]);
   const [userStats, setUserStats] = useState({
     totalWorkspaces: 0,
+    ownedWorkspaces: 0,
     collaborators: 0,
-    activeTime: 0,
-    contributions: 0
+    totalFiles: 0,
+    pendingInvites: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
+  const [userWorkspaces, setUserWorkspaces] = useState([]);
+  const [isStatsLoading, setIsStatsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -39,66 +62,170 @@ const Profile = () => {
     if (currentUser) {
       setUser(currentUser);
       setEmail(currentUser.email);
-      fetchInvites(currentUser.uid);
-      fetchUserStats(currentUser.uid);
+      fetchUserData(currentUser.uid);
     } else {
       router.push("/login");
     }
   }, []);
 
-  const fetchUserStats = async (userId) => {
+  const fetchUserData = async (userId) => {
+    setIsStatsLoading(true);
     try {
-      // Fetch workspaces where user is a member
-      const workspacesQuery = query(collection(db, "workspaces"));
-      const workspacesSnapshot = await getDocs(workspacesQuery);
-      const userWorkspaces = [];
-      
+      // Fetch user document for invites and other data
+      const userDoc = await getDoc(doc(db, "users", userId));
+      const userData = userDoc.exists() ? userDoc.data() : {};
+      const userInvites = userData.invites || [];
+      setInvites(userInvites);
+
+      // Fetch all workspaces
+      const workspacesSnapshot = await getDocs(collection(db, "workspaces"));
+      const allWorkspaces = [];
+      const ownedWorkspaces = [];
+      const memberWorkspaces = [];
+      let totalCollaborators = 0;
+      let totalFiles = 0;
+
       for (const workspaceDoc of workspacesSnapshot.docs) {
-        const membersRef = collection(db, `workspaces/${workspaceDoc.id}/members`);
-        const memberSnapshot = await getDoc(doc(membersRef, userId));
-        if (memberSnapshot.exists()) {
-          userWorkspaces.push(workspaceDoc.id);
+        const workspaceData = workspaceDoc.data();
+        const workspaceId = workspaceDoc.id;
+
+        // Check if user is owner
+        if (workspaceData.createdBy === userId) {
+          ownedWorkspaces.push({
+            id: workspaceId,
+            name: workspaceData.name || workspaceId,
+            role: 'owner',
+            createdAt: workspaceData.createdAt,
+            ...workspaceData
+          });
+        }
+
+        // Check if user is a member
+        const memberDoc = await getDoc(doc(db, `workspaces/${workspaceId}/members`, userId));
+        if (memberDoc.exists()) {
+          const memberData = memberDoc.data();
+          memberWorkspaces.push({
+            id: workspaceId,
+            name: workspaceData.name || workspaceId,
+            role: memberData.role || 'contributor',
+            joinedAt: memberData.joinedAt,
+            ...workspaceData
+          });
+
+          // Count collaborators in this workspace
+          const membersSnapshot = await getDocs(collection(db, `workspaces/${workspaceId}/members`));
+          totalCollaborators += membersSnapshot.size;
+
+          // Count files in this workspace
+          try {
+            const filesSnapshot = await getDocs(collection(db, `workspaces/${workspaceId}/files`));
+            totalFiles += filesSnapshot.size;
+          } catch (error) {
+            console.log(`No files collection for workspace ${workspaceId}`);
+          }
         }
       }
 
-      // Calculate total collaborators across all workspaces
-      let totalCollaborators = 0;
-      for (const workspaceId of userWorkspaces) {
-        const membersRef = collection(db, `workspaces/${workspaceId}/members`);
-        const membersSnapshot = await getDocs(membersRef);
-        totalCollaborators += membersSnapshot.size;
-      }
+      // Combine owned and member workspaces
+      const allUserWorkspaces = [...ownedWorkspaces, ...memberWorkspaces];
+      
+      // Remove duplicates (in case user owns and is also a member)
+      const uniqueWorkspaces = allUserWorkspaces.filter((workspace, index, self) =>
+        index === self.findIndex(w => w.id === workspace.id)
+      );
 
-      // Set user statistics
+      setUserWorkspaces(uniqueWorkspaces);
+
+      // Update stats
       setUserStats({
-        totalWorkspaces: userWorkspaces.length,
+        totalWorkspaces: uniqueWorkspaces.length,
+        ownedWorkspaces: ownedWorkspaces.length,
         collaborators: totalCollaborators,
-        activeTime: Math.floor(Math.random() * 100), // Placeholder for active time
-        contributions: Math.floor(Math.random() * 50) // Placeholder for contributions
+        totalFiles: totalFiles,
+        pendingInvites: userInvites.length
       });
 
-      // Set recent activity (placeholder data)
-      setRecentActivity([
-        { type: 'workspace', action: 'Created new workspace', time: '2 hours ago' },
-        { type: 'code', action: 'Updated main component', time: '5 hours ago' },
-        { type: 'collaboration', action: 'Joined project Alpha', time: '1 day ago' }
-      ]);
+      // Generate recent activity based on real data
+      await fetchRecentActivity(userId, uniqueWorkspaces);
+
     } catch (error) {
-      console.error("Error fetching user stats:", error);
-      toast.error("Failed to load user statistics");
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to load user data");
+    } finally {
+      setIsStatsLoading(false);
     }
   };
 
-  const fetchInvites = async (userId) => {
+  const fetchRecentActivity = async (userId, workspaces) => {
     try {
-      const userRef = doc(db, "users", userId);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        setInvites(userSnap.data().invites || []);
-      }
+      const activities = [];
+
+      // Add workspace creation activities
+      const ownedWorkspaces = workspaces.filter(w => w.createdBy === userId);
+      ownedWorkspaces.forEach(workspace => {
+        if (workspace.createdAt) {
+          activities.push({
+            id: `created_${workspace.id}`,
+            type: 'workspace',
+            action: `Created workspace "${workspace.name}"`,
+            time: formatTimeAgo(workspace.createdAt.toDate()),
+            timestamp: workspace.createdAt.toDate(),
+            icon: FaPlus,
+            color: 'text-green-400'
+          });
+        }
+      });
+
+      // Add workspace join activities
+      const joinedWorkspaces = workspaces.filter(w => w.createdBy !== userId && w.joinedAt);
+      joinedWorkspaces.forEach(workspace => {
+        activities.push({
+          id: `joined_${workspace.id}`,
+          type: 'collaboration',
+          action: `Joined workspace "${workspace.name}"`,
+          time: formatTimeAgo(workspace.joinedAt.toDate()),
+          timestamp: workspace.joinedAt.toDate(),
+          icon: FaUserCheck,
+          color: 'text-blue-400'
+        });
+      });
+
+      // Sort activities by timestamp (most recent first)
+      activities.sort((a, b) => {
+        if (!a.timestamp && !b.timestamp) return 0;
+        if (!a.timestamp) return 1;
+        if (!b.timestamp) return -1;
+        return b.timestamp - a.timestamp;
+      });
+
+      // Take only the 5 most recent activities
+      setRecentActivity(activities.slice(0, 5));
+
     } catch (error) {
-      console.error("Error fetching invites:", error);
+      console.error("Error fetching recent activity:", error);
+      // Set default activities if there's an error
+      setRecentActivity([
+        {
+          id: 'default_1',
+          type: 'profile',
+          action: 'Profile accessed',
+          time: 'Just now',
+          icon: FaEdit,
+          color: 'text-purple-400'
+        }
+      ]);
     }
+  };
+
+  const formatTimeAgo = (date) => {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return `${Math.floor(diffInSeconds / 2592000)} months ago`;
   };
 
   const handlePasswordReset = async () => {
@@ -110,65 +237,24 @@ const Profile = () => {
     try {
       await sendPasswordResetEmail(auth, email);
       setSuccessMessage("Password reset email sent successfully. Please check your inbox.");
-      toast.success("Password reset link sent to your email!"); // Show success toast
+      toast.success("Password reset link sent to your email!");
       setIsDialogOpen(false);
     } catch (error) {
       setErrorMessage("Error sending password reset email: " + error.message);
-      toast.error("Error sending password reset email "); // Show error toast
+      toast.error("Error sending password reset email");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleAcceptInvite = async (workspaceId) => {
-    if (!user) return;
-
-    try {
-      const membersRef = doc(db, `workspaces/${workspaceId}/members`, user.uid);
-      await setDoc(membersRef, {
-        userId: user.uid,
-        role: "contributor",
-        displayName: user.displayName || "Unknown",
-        photoURL: user.photoURL || "/robotic.png",
-      });
-
-      // Step 2: Remove the invite from the user's document
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        invites: arrayRemove(workspaceId),
-      });
-
-      // Update UI
-      setInvites(invites.filter((id) => id !== workspaceId));
-      toast.success("You have joined the workspace as a contributor!"); // Success toast
-    } catch (error) {
-      console.error("Error accepting invite:", error);
-      toast.error("Error accepting invite!"); // Error toast
-    }
-  };
-
-  const handleDeleteInvite = async (workspaceId) => {
-    if (!user) return;
-
-    try {
-      const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        invites: arrayRemove(workspaceId),
-      });
-
-      // Update UI
-      setInvites(invites.filter((id) => id !== workspaceId));
-      toast.success("Invite deleted successfully."); // Success toast
-    } catch (error) {
-      console.error("Error deleting invite:", error);
-      toast.error("Error deleting invite!"); // Error toast
     }
   };
 
   const isGoogleUser = user && user.providerData.some((provider) => provider.providerId === "google.com");
 
   const handleGoBack = () => {
-    router.push("/dashboard"); // Redirect to the dashboard
+    router.push("/dashboard");
+  };
+
+  const navigateToWorkspace = (workspaceId) => {
+    router.push(`/workspace/${workspaceId}`);
   };
 
   return (
@@ -209,13 +295,23 @@ const Profile = () => {
               className="flex flex-col items-center"
             >
               <Avatar className="w-24 h-24 border-4 border-blue-500/30 mb-4">
-                <AvatarImage src={auth.currentUser?.photoURL || "/robotic.png"} alt="Profile" />
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarImage src={user?.photoURL || "/robotic.png"} alt="Profile" />
+                <AvatarFallback className="text-2xl">
+                  {user?.displayName?.[0] || user?.email?.[0] || "U"}
+                </AvatarFallback>
               </Avatar>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
                 {user?.displayName || "User"}
               </h1>
-              <p className="text-gray-400 mb-4">{user?.email}</p>
+              <p className="text-gray-400 mb-4 text-center">{user?.email}</p>
+              
+              {invites.length > 0 && (
+                <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg w-full">
+                  <p className="text-blue-400 text-sm text-center">
+                    {invites.length} pending invite{invites.length > 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
               
               {!isGoogleUser && (
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -255,7 +351,7 @@ const Profile = () => {
           </Card>
 
           {/* Stats Grid */}
-          <div className="col-span-1 md:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="col-span-1 md:col-span-2 grid grid-cols-2 md:grid-cols-5 gap-4">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -263,8 +359,10 @@ const Profile = () => {
               className="bg-gray-800/30 backdrop-blur border border-gray-700/50 rounded-lg p-4 flex flex-col items-center"
             >
               <FaCode className="text-2xl text-blue-400 mb-2" />
-              <h3 className="text-gray-400 text-sm">Workspaces</h3>
-              <p className="text-2xl font-bold">{userStats.totalWorkspaces}</p>
+              <h3 className="text-gray-400 text-sm text-center">Total Workspaces</h3>
+              <p className="text-2xl font-bold">
+                {isStatsLoading ? "..." : userStats.totalWorkspaces}
+              </p>
             </motion.div>
             
             <motion.div
@@ -273,9 +371,11 @@ const Profile = () => {
               transition={{ delay: 0.2 }}
               className="bg-gray-800/30 backdrop-blur border border-gray-700/50 rounded-lg p-4 flex flex-col items-center"
             >
-              <FaUsers className="text-2xl text-green-400 mb-2" />
-              <h3 className="text-gray-400 text-sm">Collaborators</h3>
-              <p className="text-2xl font-bold">{userStats.collaborators}</p>
+              <FaStar className="text-2xl text-yellow-400 mb-2" />
+              <h3 className="text-gray-400 text-sm text-center">Owned</h3>
+              <p className="text-2xl font-bold">
+                {isStatsLoading ? "..." : userStats.ownedWorkspaces}
+              </p>
             </motion.div>
 
             <motion.div
@@ -284,9 +384,11 @@ const Profile = () => {
               transition={{ delay: 0.3 }}
               className="bg-gray-800/30 backdrop-blur border border-gray-700/50 rounded-lg p-4 flex flex-col items-center"
             >
-              <FaClock className="text-2xl text-purple-400 mb-2" />
-              <h3 className="text-gray-400 text-sm">Active Time</h3>
-              <p className="text-2xl font-bold">{userStats.activeTime}h</p>
+              <FaUsers className="text-2xl text-green-400 mb-2" />
+              <h3 className="text-gray-400 text-sm text-center">Collaborators</h3>
+              <p className="text-2xl font-bold">
+                {isStatsLoading ? "..." : userStats.collaborators}
+              </p>
             </motion.div>
 
             <motion.div
@@ -295,9 +397,24 @@ const Profile = () => {
               transition={{ delay: 0.4 }}
               className="bg-gray-800/30 backdrop-blur border border-gray-700/50 rounded-lg p-4 flex flex-col items-center"
             >
-              <FaStar className="text-2xl text-yellow-400 mb-2" />
-              <h3 className="text-gray-400 text-sm">Contributions</h3>
-              <p className="text-2xl font-bold">{userStats.contributions}</p>
+              <FaFileAlt className="text-2xl text-purple-400 mb-2" />
+              <h3 className="text-gray-400 text-sm text-center">Total Files</h3>
+              <p className="text-2xl font-bold">
+                {isStatsLoading ? "..." : userStats.totalFiles}
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gray-800/30 backdrop-blur border border-gray-700/50 rounded-lg p-4 flex flex-col items-center"
+            >
+              <FaClock className="text-2xl text-orange-400 mb-2" />
+              <h3 className="text-gray-400 text-sm text-center">Pending Invites</h3>
+              <p className="text-2xl font-bold">
+                {isStatsLoading ? "..." : userStats.pendingInvites}
+              </p>
             </motion.div>
           </div>
 
@@ -305,58 +422,76 @@ const Profile = () => {
           <Card className="col-span-1 md:col-span-2 bg-gray-800/50 backdrop-blur border-gray-700/50 p-6">
             <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
             <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="text-blue-400">{activity.action}</div>
-                  </div>
-                  <span className="text-sm text-gray-400">{activity.time}</span>
-                </motion.div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Invitations */}
-          <Card className="col-span-1 bg-gray-800/50 backdrop-blur border-gray-700/50 p-6">
-            <h2 className="text-xl font-semibold mb-4">Pending Invitations</h2>
-            <div className="space-y-3">
-              {invites.length > 0 ? (
-                invites.map((workspaceId, index) => (
+              {isStatsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30">
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 bg-gray-600 rounded"></div>
+                          <div className="w-40 h-4 bg-gray-600 rounded"></div>
+                        </div>
+                        <div className="w-16 h-4 bg-gray-600 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : recentActivity.length > 0 ? (
+                recentActivity.map((activity, index) => (
                   <motion.div
-                    key={workspaceId}
-                    initial={{ x: 20, opacity: 0 }}
+                    key={activity.id}
+                    initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: index * 0.1 }}
-                    className="p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 space-y-2"
+                    className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors"
                   >
-                    <div className="text-sm text-gray-300 break-all">{workspaceId}</div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleAcceptInvite(workspaceId)}
-                        className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/50"
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteInvite(workspaceId)}
-                        className="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50"
-                      >
-                        Decline
-                      </Button>
+                    <div className="flex items-center gap-3">
+                      <activity.icon className={`text-lg ${activity.color}`} />
+                      <div className="text-gray-200">{activity.action}</div>
                     </div>
+                    <span className="text-sm text-gray-400">{activity.time}</span>
                   </motion.div>
                 ))
               ) : (
-                <p className="text-gray-400 text-center py-4">No pending invitations</p>
+                <div className="text-center text-gray-400 py-8">
+                  <FaClock className="text-4xl mx-auto mb-4 opacity-50" />
+                  <p>No recent activity</p>
+                </div>
               )}
             </div>
           </Card>
+
+          {/* Workspaces List */}
+          {userWorkspaces.length > 0 && (
+            <Card className="col-span-1 bg-gray-800/50 backdrop-blur border-gray-700/50 p-6">
+              <h2 className="text-xl font-semibold mb-4">Your Workspaces</h2>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {userWorkspaces.map((workspace, index) => (
+                  <motion.div
+                    key={workspace.id}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => navigateToWorkspace(workspace.id)}
+                    className="p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 cursor-pointer transition-all hover:border-blue-500/30"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-white truncate">{workspace.name}</h3>
+                        <p className="text-sm text-gray-400 capitalize">{workspace.role}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {workspace.role === 'owner' && (
+                          <FaStar className="text-yellow-400 text-sm" />
+                        )}
+                        <FaCode className="text-blue-400 text-sm" />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
       </motion.div>
     </div>
